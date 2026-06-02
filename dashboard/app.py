@@ -55,13 +55,12 @@ if "stream" not in ss:
     ss.n = ss.alerts = ss.reviews = 0
     ss.last_alert = None
 
-with st.sidebar:
-    st.markdown("### ⚙️ Controls")
-    running = st.toggle("▶ Live stream", value=True)
-    batch = st.slider("Transactions per tick", 1, 10, 4)
-    st.markdown("---")
-    st.caption(f"Serving: **{META.get('serving_model', 'ensemble')}**")
+with st.expander("⚙️  Settings", expanded=True):
+    sc1, sc2 = st.columns([1, 2])
+    running = sc1.toggle("▶ Live stream", value=True)
+    batch = sc2.slider("Transactions per tick", 1, 10, 4)
     st.caption(
+        f"Serving: **{META.get('serving_model', 'ensemble')}** · "
         f"🚨 Alert ≥ {META.get('alert_threshold', 0.85):.2f} · ⚠️ Review ≥ {META.get('review_threshold', 0.6):.2f}"
     )
 
