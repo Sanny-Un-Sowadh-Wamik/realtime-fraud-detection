@@ -6,7 +6,6 @@ Run:  python scripts/make_figures.py   (writes docs/images/results.png)
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import matplotlib
 
@@ -42,8 +41,9 @@ def main() -> None:
     ax[1].set_xticks([0, 1], ["pred legit", "pred fraud"])
     ax[1].set_yticks([0, 1], ["true legit", "true fraud"])
     for (i, j), v in np.ndenumerate(cm):
-        ax[1].text(j, i, f"{v:,}", ha="center", va="center",
-                   color="white" if v > cm.max() / 2 else "black", fontsize=10)
+        ax[1].text(
+            j, i, f"{v:,}", ha="center", va="center", color="white" if v > cm.max() / 2 else "black", fontsize=10
+        )
     ax[1].set_title(f"Ensemble confusion matrix (thr={ens['threshold']})")
     fig.colorbar(im, ax=ax[1], fraction=0.046)
 

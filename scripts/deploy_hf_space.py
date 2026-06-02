@@ -91,7 +91,9 @@ def main() -> None:
     stage = Path("/tmp/hf_fraud_dash")
     n = _stage(stage)
     print(f"uploading {n} files…")
-    api.upload_folder(folder_path=str(stage), repo_id=repo_id, repo_type="space", commit_message="Deploy fraud dashboard")
+    api.upload_folder(
+        folder_path=str(stage), repo_id=repo_id, repo_type="space", commit_message="Deploy fraud dashboard"
+    )
     print("SPACE_URL=https://huggingface.co/spaces/" + repo_id)
 
 

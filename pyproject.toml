@@ -43,6 +43,7 @@ select = ["E", "F", "I", "B", "UP", "W"]
 
 [tool.ruff.lint.per-file-ignores]
 "dashboard/app.py" = ["E402"]
+"dashboard/theme.py" = ["E501"]  # long CSS lines can't wrap
 "conftest.py" = ["E402"]
 
 [tool.ruff.lint.flake8-bugbear]
