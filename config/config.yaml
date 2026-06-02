@@ -1,0 +1,24 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Fraud-detection configuration. Plain params here (version-controlled);
+# secrets in .env. Validated into typed pydantic models at load time.
+# ─────────────────────────────────────────────────────────────────────────────
+project_name: fraud-detection
+
+data:
+  source: openml            # keyless — the ULB Credit Card Fraud dataset
+  openml_data_id: 1597      # https://www.openml.org/d/1597 (284,807 tx, 492 fraud)
+  test_size: 0.2
+  random_state: 42
+  sample_legit: 12000       # legit rows kept in the committed sample (+ ALL fraud)
+
+model:
+  use_smote: true
+  isolation_forest_contamination: 0.0017   # ≈ the true fraud rate
+  ensemble_weight_xgb: 0.7                  # weight on XGBoost vs Isolation Forest
+  random_state: 42
+  registry_name: fraud-detector
+
+serving:
+  alert_threshold: 0.85     # P(fraud) ≥ → ALERT
+  review_threshold: 0.6     # P(fraud) ≥ → REVIEW
+  stream_rate_hz: 10.0      # simulated transactions per second
