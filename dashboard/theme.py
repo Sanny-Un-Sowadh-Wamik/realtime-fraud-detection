@@ -11,8 +11,11 @@ def inject(grad=("#141828", "#3a1020", "#ef4444"), accent="#ef4444") -> None:
     st.markdown(
         f"""
         <style>
-          #MainMenu, footer, header {{visibility: hidden;}}
-          .stDeployButton, [data-testid="stToolbar"] {{display: none !important;}}
+          #MainMenu {{visibility: hidden;}}
+          footer {{visibility: hidden;}}
+          [data-testid="stToolbar"], [data-testid="stDecoration"], .stDeployButton {{display: none !important;}}
+          [data-testid="stHeader"] {{background: transparent;}}
+          [data-testid="stSidebarCollapseButton"], [data-testid="stSidebarCollapsedControl"], [data-testid="collapsedControl"] {{visibility: visible !important;}}
           html, body, [class*="css"] {{font-family: {_FONT};}}
           .block-container {{padding-top: 1.2rem; animation: fadeUp .6s ease;}}
           @keyframes fadeUp {{from {{opacity:0; transform:translateY(10px);}} to {{opacity:1; transform:none;}}}}
