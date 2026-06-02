@@ -20,8 +20,8 @@ for _p in (_HERE, _SRC):
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-
 import theme
+
 from frauddet.config import load_config
 from frauddet.predict import load_bundle, score_transaction
 from frauddet.stream import transaction_stream
