@@ -1,8 +1,8 @@
 """Premium live fraud-detection dashboard.
 
-Self-contained (loads the committed model bundle). An auto-refreshing fragment streams
-+ scores transactions; alerts get a SHAP explanation. Animated hero, live indicator,
-branded gauge + feed.
+Streaming + scoring + ALL rendering happen INSIDE the auto-refreshing fragment, so the
+panel updates in place each tick (fixed heights, no downward page growth). Alerts get a
+SHAP explanation.
 """
 
 from __future__ import annotations
@@ -20,8 +20,8 @@ for _p in (_HERE, _SRC):
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
-import theme
 
+import theme
 from frauddet.config import load_config
 from frauddet.predict import load_bundle, score_transaction
 from frauddet.stream import transaction_stream
@@ -44,14 +44,14 @@ theme.hero(
 _demo = " · ⚙️ synthetic demo stream" if META.get("data_is_real") is False else ""
 st.markdown(
     f'<span class="live"><span class="livedot"></span>LIVE</span>'
-    f'<span style="color:#64748b"> · scoring transactions in real time{_demo} · not financial advice</span>',
+    f'<span style="color:#7a8699"> · scoring transactions in real time{_demo} · not financial advice</span>',
     unsafe_allow_html=True,
 )
 
 ss = st.session_state
 if "stream" not in ss:
     ss.stream = transaction_stream(CFG, fraud_boost=0.06, seed=7)
-    ss.feed = deque(maxlen=40)
+    ss.feed = deque(maxlen=25)
     ss.n = ss.alerts = ss.reviews = 0
     ss.last_alert = None
 
@@ -65,74 +65,32 @@ with st.sidebar:
         f"🚨 Alert ≥ {META.get('alert_threshold', 0.85):.2f} · ⚠️ Review ≥ {META.get('review_threshold', 0.6):.2f}"
     )
 
-kpi = st.container()
-gauge_box, feed_box = st.columns([1, 2])
-shap_box = st.container()
 
-
-def _render() -> None:
-    c1, c2, c3, c4 = kpi.columns(4)
-    c1.metric("Processed", f"{ss.n:,}")
-    c2.metric("🚨 Alerts", ss.alerts)
-    c3.metric("⚠️ Review", ss.reviews)
-    c4.metric("Alert rate", f"{(ss.alerts / ss.n * 100) if ss.n else 0:.1f}%")
-
-    gauge = go.Figure(
+def _gauge() -> go.Figure:
+    rate = (ss.alerts / ss.n * 100) if ss.n else 0
+    fig = go.Figure(
         go.Indicator(
             mode="gauge+number",
-            value=(ss.alerts / ss.n * 100) if ss.n else 0,
-            number={"suffix": "%", "font": {"size": 30}},
+            value=rate,
+            number={"suffix": "%", "font": {"size": 28}},
             title={"text": "Live alert rate"},
             gauge={
                 "axis": {"range": [0, 15]},
                 "bar": {"color": "#ef4444"},
                 "steps": [
-                    {"range": [0, 5], "color": "#f1f5f9"},
-                    {"range": [5, 10], "color": "#fee2e2"},
-                    {"range": [10, 15], "color": "#fecaca"},
+                    {"range": [0, 5], "color": "rgba(148,163,184,.18)"},
+                    {"range": [5, 10], "color": "rgba(239,68,68,.18)"},
+                    {"range": [10, 15], "color": "rgba(239,68,68,.32)"},
                 ],
             },
         )
     )
-    gauge.update_layout(height=270, **theme.PLOTLY_LAYOUT)
-    gauge_box.plotly_chart(gauge, width="stretch")
-
-    if ss.feed:
-        df = pd.DataFrame(list(ss.feed))
-        styles = {
-            "ALERT": "background-color:#fee2e2;color:#991b1b;font-weight:600",
-            "REVIEW": "background-color:#fef9c3;color:#854d0e",
-            "OK": "color:#16a34a",
-        }
-        styled = df.style.map(lambda v: styles.get(v, ""), subset=["decision"]).format(
-            {"amount": "${:,.2f}", "fraud_probability": "{:.3f}"}
-        )
-        feed_box.dataframe(styled, height=300, width="stretch", hide_index=True)
-    else:
-        feed_box.info("Stream starting…")
-
-    if ss.last_alert and ss.last_alert.get("top_factors"):
-        factors = ss.last_alert["top_factors"][::-1]
-        bar = go.Figure(
-            go.Bar(
-                x=[f["shap"] for f in factors],
-                y=[f["feature"] for f in factors],
-                orientation="h",
-                marker_color=["#ef4444" if f["shap"] > 0 else "#3b82f6" for f in factors],
-            )
-        )
-        bar.update_layout(
-            height=300,
-            title=f"🔎 Why the last alert fired (SHAP) · P(fraud)={ss.last_alert['fraud_probability']:.2f}",
-            **theme.PLOTLY_LAYOUT,
-        )
-        shap_box.plotly_chart(bar, width="stretch")
-    else:
-        shap_box.info("🔎 The SHAP panel explains the most recent **ALERT** — waiting for the first one to fire…")
+    fig.update_layout(height=260, **theme.PLOTLY_LAYOUT)
+    return fig
 
 
 @st.fragment(run_every=1.0 if running else None)
-def _tick() -> None:
+def live_panel() -> None:
     if running:
         for _ in range(batch):
             tx = next(ss.stream)
@@ -147,10 +105,51 @@ def _tick() -> None:
                 ss.last_alert = {**res, **score_transaction(tx, explain=True)}
             elif res["decision"] == "REVIEW":
                 ss.reviews += 1
-    _render()
+
+    # Everything below renders inside the fragment → replaced in place each tick.
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Processed", f"{ss.n:,}")
+    c2.metric("🚨 Alerts", ss.alerts)
+    c3.metric("⚠️ Review", ss.reviews)
+    c4.metric("Alert rate", f"{(ss.alerts / ss.n * 100) if ss.n else 0:.1f}%")
+
+    gcol, fcol = st.columns([1, 2])
+    gcol.plotly_chart(_gauge(), width="stretch")
+    if ss.feed:
+        df = pd.DataFrame(list(ss.feed))
+        styles = {
+            "ALERT": "background-color:rgba(239,68,68,.18);color:#ef4444;font-weight:700",
+            "REVIEW": "background-color:rgba(245,158,11,.18);color:#d97706",
+            "OK": "color:#16a34a",
+        }
+        styled = df.style.map(lambda v: styles.get(v, ""), subset=["decision"]).format(
+            {"amount": "${:,.2f}", "fraud_probability": "{:.3f}"}
+        )
+        fcol.dataframe(styled, height=270, width="stretch", hide_index=True)
+    else:
+        fcol.info("Stream starting…")
+
+    if ss.last_alert and ss.last_alert.get("top_factors"):
+        factors = ss.last_alert["top_factors"][::-1]
+        bar = go.Figure(
+            go.Bar(
+                x=[f["shap"] for f in factors],
+                y=[f["feature"] for f in factors],
+                orientation="h",
+                marker_color=["#ef4444" if f["shap"] > 0 else "#3b82f6" for f in factors],
+            )
+        )
+        bar.update_layout(
+            height=280,
+            title=f"🔎 Why the last alert fired (SHAP) · P(fraud)={ss.last_alert['fraud_probability']:.2f}",
+            **theme.PLOTLY_LAYOUT,
+        )
+        st.plotly_chart(bar, width="stretch")
+    else:
+        st.info("🔎 The SHAP panel explains the most recent **ALERT** — waiting for the first one to fire…")
 
 
-_tick()
+live_panel()
 
 with st.expander("📊 Held-out model comparison · why we report PR-AUC (and the synthetic-data caveat)"):
     if META.get("data_is_real") is False:
@@ -162,6 +161,6 @@ with st.expander("📊 Held-out model comparison · why we report PR-AUC (and th
     if metrics:
         cols = ["pr_auc", "roc_auc", "precision", "recall", "f1", "fp", "fn"]
         table = pd.DataFrame(metrics).T.reindex(columns=cols)
-        styled = table.style.format({c: "{:.4f}" for c in cols[:5]}).highlight_max(subset=["pr_auc"], color="#c8e6c9")
+        styled = table.style.format({c: "{:.4f}" for c in cols[:5]}).highlight_max(subset=["pr_auc"], color="#0f9d58")
         st.dataframe(styled, width="stretch")
         st.caption("SMOTE lifts recall but adds false positives — the classic imbalanced-learning trade-off.")
