@@ -2,12 +2,13 @@
 
 > Anomaly detection on a **severely imbalanced** dataset (0.17% fraud) — SMOTE vs class-weighting compared, an XGBoost + Isolation Forest ensemble, **SHAP** explanations for every alert, and a **real-time streaming** scorer (WebSocket API + live dashboard). Built for the fintech/bank hiring bar (ANZ, CBA, NAB, Afterpay, Zip).
 
-<!-- badges updated on deploy -->
+[![CI](https://github.com/Sanny-Un-Sowadh-Wamik/realtime-fraud-detection/actions/workflows/ci.yml/badge.svg)](https://github.com/Sanny-Un-Sowadh-Wamik/realtime-fraud-detection/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![MLflow](https://img.shields.io/badge/tracking-MLflow-0194E2)
 ![License](https://img.shields.io/badge/license-MIT-green)
+[![Live Demo](https://img.shields.io/badge/%F0%9F%A4%97%20Live%20Demo-online-success)](https://sanny2005-realtime-fraud-detection.hf.space)
 
-**🔴 Live demo:** _added after deploy_ (Hugging Face Space)
+**🔴 Live demos (no login):** **[▶ Live dashboard](https://sanny2005-realtime-fraud-detection.hf.space)** · **[🛡️ Scoring API `/docs`](https://sanny2005-fraud-detection-api.hf.space/docs)** — both on Hugging Face Spaces _(running on synthetic data — see Results)_
 
 ---
 
