@@ -74,6 +74,8 @@ python scripts/train.py             # train, evaluate, log to MLflow
 
 ## 📊 Results
 
+![Held-out results — synthetic data](docs/images/results.png)
+
 > ⚠️ **Data note:** OpenML (the keyless source) was mid-outage during this build, so the numbers below are a **pipeline validation on a synthetic, deliberately-separable dataset** — they are inflated and **not** representative of the real problem. The loader auto-fetches the real 284,807-row ULB dataset the moment OpenML responds; `python scripts/build_dataset.py && python scripts/train.py` then replaces these. `data_is_real: false` in `models/metadata.json` and a banner in the live dashboard make the distinction explicit.
 
 Held-out test set; threshold chosen to maximise F1. **PR-AUC is the headline** (accuracy is meaningless at this prevalence):
